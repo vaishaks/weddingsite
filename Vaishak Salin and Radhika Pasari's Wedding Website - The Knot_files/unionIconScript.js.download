@@ -1,0 +1,110 @@
+
+
+(function (expirationPeriod, fragments, cacheNamespace, document, storage, JSON, Date) {
+  var currentCacheKeys;
+  var now = new Date;
+
+  function cacheKey(fragment) {
+    return cacheNamespace + fragment.name;
+  }
+
+  function getFromCache(fragment) {
+    return storage[cacheKey(fragment)];
+  }
+
+  function updateCache(fragment, newText) {
+    storage[cacheKey(fragment)] = JSON.stringify([now, newText]);
+  }
+
+  function doAppend(fragment, fragmentString) {
+    var fragmentContainer = document.createElement('div');
+    fragmentContainer.innerHTML = fragmentString;
+    fragmentContainer.id = 'Union__fragment__' + fragment.name;
+
+    document.body.appendChild(fragmentContainer);
+  }
+
+  function append(fragment, fragmentString) {
+    if (!document.body) {
+      console.warn('Remote fragments should be loaded in body, not head.');
+      document.addEventListener('DOMContentLoaded', function () {
+        doAppend(fragment, fragmentString);
+      });
+      return;
+    }
+
+    doAppend(fragment, fragmentString);
+  }
+
+  function fetch(fragment, onload) {
+    var req = new XMLHttpRequest();
+    req.addEventListener('load', function () {
+      var text = this.responseText;
+      if (this.status === 200) {
+        try {
+          updateCache(fragment, text);
+        } catch (error) {
+          console.warn('Error hydrating icon cache: ', error);
+          return 
+        }
+
+        if (onload) {
+          onload(text);
+        }
+      }
+    });
+
+    req.open('GET', fragment.url);
+    req.send();
+  }
+
+  function fetchAndAppend(fragment) {
+    fetch(fragment, function (newHTMLFragment) { append(fragment, newHTMLFragment); });
+  }
+
+  fragments.forEach(function (fragment) {
+    var cache = getFromCache(fragment);
+    var lastUsed;
+    var data;
+
+    if (!cache) {
+      fetchAndAppend(fragment);
+      return;
+    }
+
+    data = JSON.parse(cache);
+    lastUsed = new Date(data[0]);
+
+    if (lastUsed > now /* Probably an attacker */) {
+      fetchAndAppend(fragment);
+      return;
+    }
+
+    append(fragment, data[1]);
+
+    setTimeout(function () {
+      var timeSinceLastUsed = now - lastUsed;
+
+      if (timeSinceLastUsed >= expirationPeriod) {
+        fetch(fragment);
+      }
+    });
+  });
+
+  /* Delete older caches */
+  currentCacheKeys = fragments.map(cacheKey);
+  Object.keys(storage).forEach(function (key) {
+    if (key.indexOf(cacheNamespace) === 0 && currentCacheKeys.indexOf(key) === -1) {
+      storage.removeItem(key);
+      console.warn('Deleting fragment cache: ', key);
+    }
+  });
+}(
+  600000,
+  [{"name":"brands/latest","url":"https://union.theknot.com/dist/v2/brands/latest/definitions-fragment.html"},{"name":"iconography/latest","url":"https://union.theknot.com/dist/v2/iconography/latest/definitions-fragment.html"},{"name":"iconography/legacy","url":"https://union.theknot.com/dist/v2/iconography/legacy/definitions-fragment.html"}],
+  'xou/fragments/',
+  document,
+  window.localStorage,
+  JSON,
+  Date
+));

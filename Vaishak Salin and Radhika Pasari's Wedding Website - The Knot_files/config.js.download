@@ -1,0 +1,6 @@
+
+window[window["TiktokAnalyticsObject"]].instance("CA3R91BC77U49KD17OUG").setAdvancedMatchingAvailableProperties({"email":true,"phone_number":true,"auto_email":false,"auto_phone_number":false});
+window[window["TiktokAnalyticsObject"]].instance("CA3R91BC77U49KD17OUG").setPixelInfo && window[window["TiktokAnalyticsObject"]].instance("CA3R91BC77U49KD17OUG").setPixelInfo({status: 0, name: "GTM Pixel ", advertiserID: "7096510423960125441", setupMode: 1, partner: "", is_onsite: false });
+window[window["TiktokAnalyticsObject"]].setPCMDomain && window[window["TiktokAnalyticsObject"]].setPCMDomain("theknot.com");
+window[window["TiktokAnalyticsObject"]].setPCMConfig && window[window["TiktokAnalyticsObject"]].setPCMConfig([]);
+window[window["TiktokAnalyticsObject"]].enableFirstPartyCookie && window[window["TiktokAnalyticsObject"]].enableFirstPartyCookie(true);
